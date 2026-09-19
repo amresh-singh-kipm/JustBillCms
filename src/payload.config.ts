@@ -11,9 +11,11 @@ import { Posts } from './collections/Posts'
 import { Users } from './collections/Users'
 import { Footer } from './Footer/config'
 import { Header } from './Header/config'
+import { SiteSettings } from './globals/SiteSettings/config'
 import { plugins } from './plugins'
 import { defaultLexical } from '@/fields/defaultLexical'
 import { getServerSideURL } from './utilities/getURL'
+import { ADMIN_PATH, API_PATH } from './utilities/paths'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -64,7 +66,14 @@ export default buildConfig({
   }),
   collections: [Pages, Posts, Media, Categories, Users],
   cors: [getServerSideURL()].filter(Boolean),
-  globals: [Header, Footer],
+  globals: [Header, Footer, SiteSettings],
+  // Served on the justbill.ai origin next to the Laravel API (/api) and the
+  // React app's own /admin, so Payload uses distinct prefixes.
+  routes: {
+    admin: ADMIN_PATH,
+    api: API_PATH,
+  },
+  serverURL: getServerSideURL(),
   plugins,
   secret: process.env.PAYLOAD_SECRET,
   sharp,

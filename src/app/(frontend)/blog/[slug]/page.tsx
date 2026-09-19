@@ -14,6 +14,12 @@ import { PostHero } from '@/heros/PostHero'
 import { generateMeta } from '@/utilities/generateMeta'
 import PageClient from './page.client'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
+import { Breadcrumbs, type Crumb } from '@/components/Breadcrumbs'
+import { JsonLd } from '@/components/JsonLd'
+import { blogPostingJsonLd } from '@/seo/jsonLd'
+import { getSiteSettings } from '@/utilities/getSiteSettings'
+import { wordCount } from '@/utilities/lexicalToPlainText'
+import { BLOG_PATH, categoryPath, postPath } from '@/utilities/paths'
 
 export async function generateStaticParams() {
   const payload = await getPayload({ config: configPromise })
@@ -46,10 +52,21 @@ export default async function Post({ params: paramsPromise }: Args) {
   const { slug = '' } = await paramsPromise
   // Decode to support slugs with special characters
   const decodedSlug = decodeURIComponent(slug)
-  const url = '/posts/' + decodedSlug
+  const url = postPath(decodedSlug)
   const post = await queryPostBySlug({ slug: decodedSlug })
 
   if (!post) return <PayloadRedirects url={url} />
+
+  const settings = await getSiteSettings()
+  const firstCategory = post.categories?.find((c) => typeof c === 'object' && c !== null)
+  const crumbs: Crumb[] = [
+    { name: 'Home', path: '/' },
+    { name: 'Blog', path: BLOG_PATH },
+    ...(firstCategory && typeof firstCategory === 'object'
+      ? [{ name: firstCategory.title, path: categoryPath(firstCategory.slug) }]
+      : []),
+    { name: post.title, path: postPath(post.slug) },
+  ]
 
   return (
     <article className="pt-16 pb-16">
@@ -60,7 +77,9 @@ export default async function Post({ params: paramsPromise }: Args) {
 
       {draft && <LivePreviewListener />}
 
+      <JsonLd data={blogPostingJsonLd(post, settings, wordCount(post.content))} />
       <PostHero post={post} />
+      <Breadcrumbs className="mt-8" items={crumbs} />
 
       <div className="flex flex-col items-center gap-4 pt-8">
         <div className="container">
@@ -83,7 +102,7 @@ export async function generateMetadata({ params: paramsPromise }: Args): Promise
   const decodedSlug = decodeURIComponent(slug)
   const post = await queryPostBySlug({ slug: decodedSlug })
 
-  return generateMeta({ doc: post })
+  return generateMeta({ doc: post, collection: 'posts' })
 }
 
 const queryPostBySlug = cache(async ({ slug }: { slug: string }) => {

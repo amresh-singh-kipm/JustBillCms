@@ -10,6 +10,7 @@ import type { DefaultTypedEditorState } from '@payloadcms/richtext-lexical'
 
 import { fields } from './fields'
 import { getClientSideURL } from '@/utilities/getURL'
+import { API_PATH } from '@/utilities/paths'
 
 export type FormBlockType = {
   blockName?: string
@@ -63,7 +64,7 @@ export const FormBlock: React.FC<
         }, 1000)
 
         try {
-          const req = await fetch(`${getClientSideURL()}/api/form-submissions`, {
+          const req = await fetch(`${getClientSideURL()}${API_PATH}/form-submissions`, {
             body: JSON.stringify({
               form: formID,
               submissionData: dataToSend,

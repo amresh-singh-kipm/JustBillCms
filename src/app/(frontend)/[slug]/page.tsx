@@ -12,6 +12,11 @@ import { RenderHero } from '@/heros/RenderHero'
 import { generateMeta } from '@/utilities/generateMeta'
 import PageClient from './page.client'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
+import { Breadcrumbs } from '@/components/Breadcrumbs'
+import { JsonLd } from '@/components/JsonLd'
+import { webPageJsonLd } from '@/seo/jsonLd'
+import { HOME_SLUG, pagePath } from '@/utilities/paths'
+import { permanentRedirect } from 'next/navigation'
 
 export async function generateStaticParams() {
   const payload = await getPayload({ config: configPromise })
@@ -45,7 +50,10 @@ type Args = {
 
 export default async function Page({ params: paramsPromise }: Args) {
   const { isEnabled: draft } = await draftMode()
-  const { slug = 'home' } = await paramsPromise
+  const params = await paramsPromise
+  // The home page lives at `/`; never serve a duplicate of it at /home.
+  if (params.slug === HOME_SLUG) permanentRedirect('/')
+  const { slug = HOME_SLUG } = params
   // Decode to support slugs with special characters
   const decodedSlug = decodeURIComponent(slug)
   const url = '/' + decodedSlug
@@ -74,6 +82,17 @@ export default async function Page({ params: paramsPromise }: Args) {
 
       {draft && <LivePreviewListener />}
 
+      {'id' in page && <JsonLd data={webPageJsonLd(page as Parameters<typeof webPageJsonLd>[0])} />}
+      {page.slug !== HOME_SLUG && (
+        <Breadcrumbs
+          className="mb-6 pt-8"
+          items={[
+            { name: 'Home', path: '/' },
+            { name: page.title, path: pagePath(page.slug) },
+          ]}
+        />
+      )}
+
       <RenderHero {...hero} />
       <RenderBlocks blocks={layout} />
     </article>
@@ -88,7 +107,7 @@ export async function generateMetadata({ params: paramsPromise }: Args): Promise
     slug: decodedSlug,
   })
 
-  return generateMeta({ doc: page })
+  return generateMeta({ doc: page, collection: 'pages' })
 }
 
 const queryPageBySlug = cache(async ({ slug }: { slug: string }) => {

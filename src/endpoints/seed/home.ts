@@ -21,7 +21,7 @@ export const home: (args: HomeArgs) => RequiredDataFromCollectionSlug<'pages'> =
             type: 'custom',
             appearance: 'default',
             label: 'All posts',
-            url: '/posts',
+            url: '/blog',
           },
         },
         {
@@ -77,7 +77,7 @@ export const home: (args: HomeArgs) => RequiredDataFromCollectionSlug<'pages'> =
                   fields: {
                     linkType: 'custom',
                     newTab: false,
-                    url: '/admin',
+                    url: '/cms',
                   },
                   format: '',
                   indent: 0,
@@ -231,7 +231,7 @@ export const home: (args: HomeArgs) => RequiredDataFromCollectionSlug<'pages'> =
                         fields: {
                           linkType: 'custom',
                           newTab: false,
-                          url: '/admin',
+                          url: '/cms',
                         },
                         format: '',
                         indent: 0,
@@ -422,7 +422,7 @@ export const home: (args: HomeArgs) => RequiredDataFromCollectionSlug<'pages'> =
                         fields: {
                           linkType: 'custom',
                           newTab: false,
-                          url: '/admin',
+                          url: '/cms',
                         },
                         format: '',
                         indent: 0,
@@ -578,7 +578,7 @@ export const home: (args: HomeArgs) => RequiredDataFromCollectionSlug<'pages'> =
               type: 'custom',
               appearance: 'default',
               label: 'All posts',
-              url: '/posts',
+              url: '/blog',
             },
           },
         ],
@@ -634,7 +634,7 @@ export const home: (args: HomeArgs) => RequiredDataFromCollectionSlug<'pages'> =
                     fields: {
                       linkType: 'custom',
                       newTab: false,
-                      url: '/admin',
+                      url: '/cms',
                     },
                     format: '',
                     indent: 0,

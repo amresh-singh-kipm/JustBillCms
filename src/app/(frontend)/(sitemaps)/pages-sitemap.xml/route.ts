@@ -3,13 +3,16 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import { unstable_cache } from 'next/cache'
 
+import { absUrl } from '@/seo/jsonLd'
+import { HOME_SLUG, pagePath } from '@/utilities/paths'
+
+/**
+ * CMS pages. The site root is owned by the main justbill.ai app (its own
+ * sitemap lists it), so the CMS `home` page is left out here.
+ */
 const getPagesSitemap = unstable_cache(
   async () => {
     const payload = await getPayload({ config })
-    const SITE_URL =
-      process.env.NEXT_PUBLIC_SERVER_URL ||
-      process.env.VERCEL_PROJECT_PRODUCTION_URL ||
-      'https://example.com'
 
     const results = await payload.find({
       collection: 'pages',
@@ -19,9 +22,18 @@ const getPagesSitemap = unstable_cache(
       limit: 1000,
       pagination: false,
       where: {
-        _status: {
-          equals: 'published',
-        },
+        and: [
+          { _status: { equals: 'published' } },
+          { slug: { not_equals: HOME_SLUG } },
+          { 'meta.noIndex': { not_equals: true } },
+          // A canonical override means this URL is a duplicate; list the original instead.
+          {
+            or: [
+              { 'meta.canonicalUrl': { exists: false } },
+              { 'meta.canonicalUrl': { equals: '' } },
+            ],
+          },
+        ],
       },
       select: {
         slug: true,
@@ -29,31 +41,14 @@ const getPagesSitemap = unstable_cache(
       },
     })
 
-    const dateFallback = new Date().toISOString()
-
-    const defaultSitemap = [
-      {
-        loc: `${SITE_URL}/search`,
-        lastmod: dateFallback,
-      },
-      {
-        loc: `${SITE_URL}/posts`,
-        lastmod: dateFallback,
-      },
-    ]
-
-    const sitemap = results.docs
-      ? results.docs
-          .filter((page) => Boolean(page?.slug))
-          .map((page) => {
-            return {
-              loc: page?.slug === 'home' ? `${SITE_URL}/` : `${SITE_URL}/${page?.slug}`,
-              lastmod: page.updatedAt || dateFallback,
-            }
-          })
-      : []
-
-    return [...defaultSitemap, ...sitemap]
+    return results.docs
+      .filter((page) => Boolean(page?.slug))
+      .map((page) => ({
+        loc: absUrl(pagePath(page.slug)),
+        lastmod: page.updatedAt || new Date().toISOString(),
+        changefreq: 'monthly' as const,
+        priority: 0.7,
+      }))
   },
   ['pages-sitemap'],
   {

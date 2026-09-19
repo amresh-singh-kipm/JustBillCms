@@ -1,4 +1,4 @@
-import type { CollectionSlug, GlobalSlug, Payload, PayloadRequest, File } from 'payload'
+import type { CollectionSlug, Payload, PayloadRequest, File } from 'payload'
 
 import { contactForm as contactFormData } from './contact-form'
 import { contact as contactPageData } from './contact-page'
@@ -20,9 +20,7 @@ const collections: CollectionSlug[] = [
   'search',
 ]
 
-const globals: GlobalSlug[] = ['header', 'footer']
-
-const categories = ['Technology', 'News', 'Finance', 'Design', 'Software', 'Engineering']
+const categories = ['GST', 'E-invoicing', 'E-way bill', 'Accounting', 'Inventory', 'Small business']
 
 // Next.js revalidation errors are normal when seeding the database without a server running
 // i.e. running `yarn seed` locally instead of using the admin UI within an active app
@@ -44,20 +42,20 @@ export const seed = async ({
   payload.logger.info(`— Clearing collections and globals...`)
 
   // clear the database
-  await Promise.all(
-    globals.map((global) =>
-      payload.updateGlobal({
-        slug: global,
-        data: {
-          navItems: [],
-        },
-        depth: 0,
-        context: {
-          disableRevalidate: true,
-        },
-      }),
-    ),
-  )
+  await Promise.all([
+    payload.updateGlobal({
+      slug: 'header',
+      data: { navItems: [] },
+      depth: 0,
+      context: { disableRevalidate: true },
+    }),
+    payload.updateGlobal({
+      slug: 'footer',
+      data: { groups: [] },
+      depth: 0,
+      context: { disableRevalidate: true },
+    }),
+  ])
 
   await Promise.all(
     collections.map((collection) => payload.db.deleteMany({ collection, req, where: {} })),
@@ -132,7 +130,7 @@ export const seed = async ({
         collection: 'categories',
         data: {
           title: category,
-          slug: category,
+          slug: category.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
         },
       }),
     ),
@@ -217,18 +215,21 @@ export const seed = async ({
 
   payload.logger.info(`— Seeding globals...`)
 
+  // The main product (justbill.ai) still owns most marketing pages — link out to
+  // it by absolute URL until those pages are recreated as CMS-driven SEO pages here.
+  const APP_URL = 'https://justbill.ai'
+  const customLink = (label: string, path: string) => ({
+    link: { type: 'custom' as const, label, url: `${APP_URL}${path}` },
+  })
+
   await Promise.all([
     payload.updateGlobal({
       slug: 'header',
       data: {
         navItems: [
-          {
-            link: {
-              type: 'custom',
-              label: 'Posts',
-              url: '/posts',
-            },
-          },
+          customLink('Features', '/features'),
+          customLink('Pricing', '/pricing'),
+          customLink('GST calculator', '/gst-calculator'),
           {
             link: {
               type: 'reference',
@@ -245,29 +246,69 @@ export const seed = async ({
     payload.updateGlobal({
       slug: 'footer',
       data: {
-        navItems: [
+        groups: [
           {
-            link: {
-              type: 'custom',
-              label: 'Admin',
-              url: '/admin',
-            },
+            title: 'Product',
+            navItems: [
+              customLink('Features', '/features'),
+              customLink('GST billing software', '/gst-billing-software'),
+              customLink('Accounting software', '/accounting-software'),
+              customLink('E-invoicing software', '/e-invoicing-software'),
+              customLink('E-way bill software', '/e-way-bill-software'),
+              customLink('Free invoice generator', '/free-invoice-generator'),
+              customLink('GST return filing', '/gst-return-filing'),
+              customLink('Inventory management', '/inventory-management'),
+              customLink('POS billing software', '/pos-billing-software'),
+            ],
           },
           {
-            link: {
-              type: 'custom',
-              label: 'Source Code',
-              newTab: true,
-              url: 'https://github.com/payloadcms/payload/tree/3.x/templates/website',
-            },
+            title: 'Solutions',
+            navItems: [
+              customLink('Chartered accountants', '/for/chartered-accountants'),
+              customLink('Manufacturers', '/use-cases/manufacturing'),
+              customLink('Retail shops', '/use-cases/retail'),
+              customLink('Service businesses', '/use-cases/services'),
+              customLink('Wholesalers & distributors', '/use-cases/wholesale'),
+            ],
           },
           {
-            link: {
-              type: 'custom',
-              label: 'Payload',
-              newTab: true,
-              url: 'https://payloadcms.com/',
-            },
+            title: 'Compare',
+            navItems: [
+              customLink('JustBill vs myBillBook', '/vs/mybillbook'),
+              customLink('JustBill vs Tally', '/vs/tally'),
+              customLink('JustBill vs Vyapar', '/vs/vyapar'),
+              customLink('JustBill vs Zoho Books', '/vs/zoho-books'),
+            ],
+          },
+          {
+            title: 'Free resources',
+            navItems: [
+              customLink('GST calculator', '/gst-calculator'),
+              customLink('Credit note format', '/credit-note-format'),
+              customLink('Debit note format', '/debit-note-format'),
+              customLink('Delivery challan format', '/delivery-challan-format'),
+              customLink('GST invoice format', '/gst-invoice-format'),
+              customLink('Proforma invoice format', '/proforma-invoice-format'),
+              customLink('Purchase order format', '/purchase-order-format'),
+              customLink('Quotation format', '/quotation-format'),
+            ],
+          },
+          {
+            title: 'Company',
+            navItems: [
+              customLink('Pricing', '/pricing'),
+              customLink('About', '/about'),
+              {
+                link: {
+                  type: 'reference',
+                  label: 'Contact',
+                  reference: {
+                    relationTo: 'pages',
+                    value: contactPage.id,
+                  },
+                },
+              },
+            ],
           },
         ],
       },

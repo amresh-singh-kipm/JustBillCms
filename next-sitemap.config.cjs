@@ -7,14 +7,18 @@ const SITE_URL =
 module.exports = {
   siteUrl: SITE_URL,
   generateRobotsTxt: true,
-  exclude: ['/posts-sitemap.xml', '/pages-sitemap.xml', '/*', '/posts/*'],
+  // Everything is listed by the dynamic sitemaps under /cms-sitemap.xml.
+  exclude: ['/*'],
+  // Only used when the CMS runs on its own host. On justbill.ai the main app
+  // serves robots.txt and already points at /cms-sitemap.xml.
   robotsTxtOptions: {
     policies: [
       {
         userAgent: '*',
-        disallow: '/admin/*',
+        allow: '/',
+        disallow: ['/cms', '/cms-api/', '/next/', '/search'],
       },
     ],
-    additionalSitemaps: [`${SITE_URL}/pages-sitemap.xml`, `${SITE_URL}/posts-sitemap.xml`],
+    additionalSitemaps: [`${SITE_URL}/cms-sitemap.xml`],
   },
 }

@@ -3,6 +3,7 @@ import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from 'paylo
 import { revalidatePath, revalidateTag } from 'next/cache'
 
 import type { Post } from '../../../payload-types'
+import { BLOG_PATH, postPath } from '@/utilities/paths'
 
 export const revalidatePost: CollectionAfterChangeHook<Post> = ({
   doc,
@@ -11,22 +12,28 @@ export const revalidatePost: CollectionAfterChangeHook<Post> = ({
 }) => {
   if (!context.disableRevalidate) {
     if (doc._status === 'published') {
-      const path = `/posts/${doc.slug}`
+      const path = postPath(doc.slug)
 
       payload.logger.info(`Revalidating post at path: ${path}`)
 
       revalidatePath(path)
-      revalidateTag('posts-sitemap', 'max')
+      revalidatePath(BLOG_PATH, 'layout')
+      revalidateTag('blog-sitemap', 'max')
+
+      // A changed slug leaves the old URL behind; refresh it so it stops serving.
+      if (previousDoc?.slug && previousDoc.slug !== doc.slug)
+        revalidatePath(postPath(previousDoc.slug))
     }
 
     // If the post was previously published, we need to revalidate the old path
-    if (previousDoc._status === 'published' && doc._status !== 'published') {
-      const oldPath = `/posts/${previousDoc.slug}`
+    if (previousDoc?._status === 'published' && doc._status !== 'published') {
+      const oldPath = postPath(previousDoc.slug)
 
       payload.logger.info(`Revalidating old post at path: ${oldPath}`)
 
       revalidatePath(oldPath)
-      revalidateTag('posts-sitemap', 'max')
+      revalidatePath(BLOG_PATH, 'layout')
+      revalidateTag('blog-sitemap', 'max')
     }
   }
   return doc
@@ -34,10 +41,9 @@ export const revalidatePost: CollectionAfterChangeHook<Post> = ({
 
 export const revalidateDelete: CollectionAfterDeleteHook<Post> = ({ doc, req: { context } }) => {
   if (!context.disableRevalidate) {
-    const path = `/posts/${doc?.slug}`
-
-    revalidatePath(path)
-    revalidateTag('posts-sitemap', 'max')
+    revalidatePath(postPath(doc?.slug))
+    revalidatePath(BLOG_PATH, 'layout')
+    revalidateTag('blog-sitemap', 'max')
   }
 
   return doc

@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation'
 import './index.scss'
 
 import { getClientSideURL } from '@/utilities/getURL'
+import { ADMIN_PATH, API_PATH } from '@/utilities/paths'
 
 const baseClass = 'admin-bar'
 
@@ -62,6 +63,8 @@ export const AdminBar: React.FC<{
             logo: 'text-white',
             user: 'text-white',
           }}
+          adminPath={ADMIN_PATH}
+          apiPath={API_PATH}
           cmsURL={getClientSideURL()}
           collectionSlug={collection}
           collectionLabels={{
